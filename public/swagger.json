@@ -6,17 +6,150 @@
 		"requestBodies": {},
 		"responses": {},
 		"schemas": {
-			"PingResponse": {
+			"CustomResponse": {
 				"properties": {
+					"status": {
+						"type": "number",
+						"format": "double"
+					},
 					"message": {
-						"type": "string"
+						"anyOf": [
+							{
+								"type": "string"
+							},
+							{}
+						]
 					},
 					"data": {}
 				},
 				"required": [
-					"message",
-					"data"
+					"status",
+					"message"
 				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreateChat": {
+				"properties": {
+					"recipient_id": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"recipient_id"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"GroupType": {
+				"enum": [
+					"admin group",
+					"customer group"
+				],
+				"type": "string"
+			},
+			"CreateGroup": {
+				"properties": {
+					"name": {
+						"type": "string"
+					},
+					"type": {
+						"$ref": "#/components/schemas/GroupType"
+					},
+					"description": {
+						"type": "string"
+					},
+					"participant_ids": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"name",
+					"type",
+					"description",
+					"participant_ids"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UpdateChat": {
+				"properties": {
+					"participant_ids": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array"
+					},
+					"description": {
+						"type": "string"
+					}
+				},
+				"type": "object",
+				"additionalProperties": false
+			},
+			"FileType": {
+				"enum": [
+					"image",
+					"audio",
+					"video",
+					"file"
+				],
+				"type": "string"
+			},
+			"AttachmentType": {
+				"properties": {
+					"file_type": {
+						"$ref": "#/components/schemas/FileType"
+					},
+					"file": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"file_type",
+					"file"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreateMessage": {
+				"properties": {
+					"content": {
+						"type": "string"
+					},
+					"attachments": {
+						"items": {
+							"$ref": "#/components/schemas/AttachmentType"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"content"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"SeenStatus": {
+				"enum": [
+					"sent",
+					"delivered",
+					"read"
+				],
+				"type": "string"
+			},
+			"UpdateMessage": {
+				"properties": {
+					"status": {
+						"$ref": "#/components/schemas/SeenStatus"
+					},
+					"content": {
+						"type": "string"
+					}
+				},
 				"type": "object",
 				"additionalProperties": false
 			}
@@ -39,28 +172,512 @@
 	},
 	"openapi": "3.0.0",
 	"paths": {
-		"/ping": {
+		"/users/token": {
 			"get": {
-				"operationId": "GetMessage",
+				"operationId": "GetUserToken",
 				"responses": {
 					"200": {
 						"description": "Ok",
 						"content": {
 							"application/json": {
 								"schema": {
-									"$ref": "#/components/schemas/PingResponse"
+									"$ref": "#/components/schemas/CustomResponse"
 								}
 							}
 						}
 					}
 				},
-				"summary": "endpoint to ping the request",
+				"summary": "endpoint to retrieve a user's token",
+				"tags": [
+					"users"
+				],
 				"security": [
 					{
 						"api_key": []
 					}
 				],
 				"parameters": []
+			}
+		},
+		"/users": {
+			"get": {
+				"operationId": "GetUsers",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CustomResponse"
+								}
+							}
+						}
+					}
+				},
+				"summary": "endpoint to retrieve a users",
+				"tags": [
+					"users"
+				],
+				"security": [
+					{
+						"api_key": []
+					}
+				],
+				"parameters": []
+			}
+		},
+		"/chats": {
+			"post": {
+				"operationId": "CreateChat",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CustomResponse"
+								}
+							}
+						}
+					}
+				},
+				"summary": "endpoint to create a chat",
+				"tags": [
+					"chats"
+				],
+				"security": [
+					{
+						"api_key": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateChat"
+							}
+						}
+					}
+				}
+			},
+			"get": {
+				"operationId": "ListChat",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CustomResponse"
+								}
+							}
+						}
+					}
+				},
+				"summary": "endpoint to retrieve list of chats",
+				"tags": [
+					"chats"
+				],
+				"security": [
+					{
+						"api_key": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "page",
+						"required": false,
+						"schema": {
+							"default": 1,
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "page_size",
+						"required": false,
+						"schema": {
+							"default": 10,
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		},
+		"/chats/groups": {
+			"post": {
+				"operationId": "CreateGroup",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CustomResponse"
+								}
+							}
+						}
+					}
+				},
+				"summary": "endpoint to create a group",
+				"tags": [
+					"chats"
+				],
+				"security": [
+					{
+						"api_key": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateGroup"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/chats/{id}": {
+			"put": {
+				"operationId": "UpdateChat",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CustomResponse"
+								}
+							}
+						}
+					}
+				},
+				"summary": "endpoint to update a group",
+				"tags": [
+					"chats"
+				],
+				"security": [
+					{
+						"api_key": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateChat"
+							}
+						}
+					}
+				}
+			},
+			"delete": {
+				"operationId": "DeleteChat",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CustomResponse"
+								}
+							}
+						}
+					}
+				},
+				"summary": "endpoint to update a group",
+				"tags": [
+					"chats"
+				],
+				"security": [
+					{
+						"api_key": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			},
+			"get": {
+				"operationId": "RetrieveChat",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CustomResponse"
+								}
+							}
+						}
+					}
+				},
+				"summary": "endpoint to retrieve a chat",
+				"tags": [
+					"chats"
+				],
+				"security": [
+					{
+						"api_key": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/chats/{id}/messages": {
+			"post": {
+				"operationId": "CreateMessage",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CustomResponse"
+								}
+							}
+						}
+					}
+				},
+				"summary": "endpoint to send message to a chat",
+				"tags": [
+					"chats"
+				],
+				"security": [
+					{
+						"api_key": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateMessage"
+							}
+						}
+					}
+				}
+			},
+			"get": {
+				"operationId": "ListMessage",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CustomResponse"
+								}
+							}
+						}
+					}
+				},
+				"summary": "endpoint to retrieve all messages in a chat",
+				"tags": [
+					"chats"
+				],
+				"security": [
+					{
+						"api_key": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "page",
+						"required": false,
+						"schema": {
+							"default": 1,
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "page_size",
+						"required": false,
+						"schema": {
+							"default": 10,
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		},
+		"/chats/messages/{id}": {
+			"delete": {
+				"operationId": "DeleteMessage",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CustomResponse"
+								}
+							}
+						}
+					}
+				},
+				"summary": "endpoint to delete a message in a chat",
+				"tags": [
+					"chats"
+				],
+				"security": [
+					{
+						"api_key": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			},
+			"put": {
+				"operationId": "UpdateMessage",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CustomResponse"
+								}
+							}
+						}
+					}
+				},
+				"summary": "endpoint to update a message in a chat",
+				"tags": [
+					"chats"
+				],
+				"security": [
+					{
+						"api_key": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateMessage"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/chats/messages/attachments": {
+			"delete": {
+				"operationId": "DeleteMessageAttachments",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CustomResponse"
+								}
+							}
+						}
+					}
+				},
+				"summary": "endpoint to delete message attachments in a chat",
+				"tags": [
+					"chats"
+				],
+				"security": [
+					{
+						"api_key": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"items": {
+									"type": "string"
+								},
+								"type": "array"
+							}
+						}
+					}
+				}
 			}
 		}
 	},

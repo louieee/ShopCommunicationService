@@ -4,11 +4,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node build/index.js",
     "swagger": "tsoa spec",
     "prebuild": "npm run swagger",
     "build": "tsc",
     "predev": "npm run swagger",
+    "prisma": "prisma generate ",
+    "prisma migrate": "prisma db push",
     "dev": "concurrently \"nodemon\" \"nodemon -x tsoa spec\"",
     "run celery worker": "node src/core/celery/worker.js",
     "run celery scheduler": "node src/core/celery/scheduler.js"
@@ -18,7 +19,7 @@
       "src"
     ],
     "ext": "ts",
-    "exec": "ts-node src/index.ts"
+    "exec": "npm run swagger && npm run prebuild && npm run build && ts-node src/index.ts"
   },
   "keywords": [],
   "author": "",
@@ -27,11 +28,17 @@
     "@prisma/client": "^5.6.0",
     "@sentry/integrations": "^7.83.0",
     "@sentry/node": "^7.83.0",
+    "@types/amqplib": "^0.10.5",
+    "@types/bcrypt": "^5.0.2",
     "@types/cors": "^2.8.17",
+    "@types/ioredis": "^5.0.0",
+    "amqplib": "^0.10.4",
+    "bcrypt": "^5.1.1",
     "celery-node": "^0.5.9",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
+    "ioredis": "^5.4.1",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "node-cron": "^3.0.3",
@@ -52,7 +59,7 @@
     "concurrently": "^8.2.2",
     "nodemon": "^3.0.1",
     "prisma": "^5.6.0",
-    "ts-node": "^10.9.1",
-    "typescript": "^5.3.2"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
   }
 }

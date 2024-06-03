@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Settings = void 0;
+require("dotenv").config();
 class Settings {
 }
 exports.Settings = Settings;
@@ -8,6 +9,7 @@ Settings.JWT_ALGORITHM = "HS256";
 Settings.JWT_ACCESS_TOKEN_EXPIRY = 30;
 Settings.JWT_REFRESH_TOKEN_EXPIRY = 60 * 24 * 7;
 Settings.JWT_SECRET_KEY = process.env.JWT_SECRET_KEY;
+Settings.JWT_ISSUER = process.env.JWT_ISSUER;
 Settings.SECRET_KEY = process.env.SECRET_KEY || "ML-4GicYUr_ECiC2T08VfwDQwbZfDDC3osDomSMcX_Q";
 Settings.CORS_ALLOW_HEADERS = ["*"];
 Settings.CORS_ORIGINS = ["*"];

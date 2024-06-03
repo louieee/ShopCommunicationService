@@ -1,0 +1,21 @@
+###
+
+POST http://localhost:8000/chats/groups
+accept: application/json
+Authorization: Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MDg4NjY4NDEsInVzZXIiOnsiaWQiOiI2NWQxZjRmNTEwM2NhYzkzNjQ3ZTQ0ODQiLCJ1c2VybmFtZSI6Ikphbm5pZSIsImVtYWlsIjoiamFuaWVAb2hhZWdidS5jb20iLCJmaXJzdF9uYW1lIjoiT2x1Y2hpIiwibGFzdF9uYW1lIjoiT2hhZWdidSIsInBhc3N3b3JkIjoiJDJiJDEwJGl4cjltNS5IbTlWdWVqT0xwa015R3VvVHA4MUR3RmxWYWlCejhRcm82UlhHaHV6bEY1TmVlIiwicm9sZSI6IkNVU1RPTUVSIiwicHJvZmlsZV9waWMiOiJodHRwOi8vYnhoc2JqYXMuY29tIiwiY3JlYXRlZF9hdCI6IjIwMjQtMDItMThUMTI6MTU6NDkuOTQ1WiIsInVwZGF0ZWRfYXQiOiIyMDI0LTAyLTE4VDEyOjE1OjQ5Ljk0NVoiLCJjaGF0X2lkcyI6W119LCJpYXQiOjE3MDg4NjUwNDF9.cNJpfOS4Z3EW1MT83I-RVtoOXlgDPcBAoAJrUSI4cPo
+Content-Type: application/json
+
+{
+  "name": "A senior men group",
+  "type": "admin group",
+  "description": "A senior men group",
+  "participant_ids": [
+
+  ]
+}
+
+###
+
+GET http://localhost:8000/ping
+accept: application/json
+Content-Type: application/json

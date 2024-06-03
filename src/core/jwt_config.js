@@ -11,12 +11,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.socketAuthenticationDecorator = exports.jwtSocketAuthentication = exports.jwtAuthentication = exports.create_access_token = void 0;
 const config_1 = require("./config");
-const user_1 = require("../schemas/user");
+const user_1 = require("../Repositories/user");
 const jwt = require('jsonwebtoken');
 const ALGORITHM = config_1.Settings.JWT_ALGORITHM;
 const ACCESS_TOKEN_EXPIRE_MINUTES = config_1.Settings.JWT_ACCESS_TOKEN_EXPIRY;
 const REFRESH_TOKEN_EXPIRE_MINUTES = config_1.Settings.JWT_REFRESH_TOKEN_EXPIRY;
 const JWT_SECRET = config_1.Settings.JWT_SECRET_KEY;
+const JWT_ISSUER = config_1.Settings.JWT_ISSUER;
 function create_access_token(user, expiresDelta = null) {
     expiresDelta = expiresDelta ? expiresDelta : ACCESS_TOKEN_EXPIRE_MINUTES;
     const expirationDate = Math.floor(Date.now() / 1000) + (expiresDelta * 60);
@@ -46,18 +47,32 @@ const error = {
     headers: { "WWW-Authenticate": "Bearer" }
 };
 function decode_access_token(token) {
-    try {
-        const payload = jwt.verify(token, config_1.Settings.SECRET_KEY, { algorithm: ALGORITHM });
-        const now = Math.floor(Date.now() / 1000);
-        if (now >= payload['exp']) {
-            error.message = "Expired access token";
+    return __awaiter(this, void 0, void 0, function* () {
+        console.log("token: ", token);
+        console.log("secret: ", JWT_SECRET);
+        console.log("alg: ", ALGORITHM);
+        console.log("issuer: ", JWT_ISSUER);
+        try {
+            const payload = jwt.verify(token, JWT_SECRET, { algorithm: ALGORITHM, issuer: JWT_ISSUER });
+            console.log("payload: ", payload["user"]);
+            const now = Math.floor(Date.now() / 1000);
+            if (now >= payload['exp']) {
+                error.message = "Expired access token";
+                throw new HttpException(error.status, error.message, error.headers);
+            }
+            const user = yield user_1.User.retrieve_by_user_id(Number.parseInt(payload["user"]["user_id"]));
+            if (user === null) {
+                error.message = "This user does not exist";
+                error.status = 404;
+                throw new HttpException(error.status, error.message, error.headers);
+            }
+            return user;
+        }
+        catch (JsonWebTokenError) {
+            console.log("jwt error2: ", error.message);
             throw new HttpException(error.status, error.message, error.headers);
         }
-        return payload['user'];
-    }
-    catch (JsonWebTokenError) {
-        throw new HttpException(error.status, error.message, error.headers);
-    }
+    });
 }
 function validate_refresh_token(token) {
     try {
@@ -87,41 +102,46 @@ function jwtAuthentication(req, res, next) {
         let token;
         token = authorization.split(" ")[1];
         if (!token) {
-            return res.status(401).json({ error: 'Unauthorized - No token provided' });
+            return res.status(401).json({ "error": "No Token was supplied" });
         }
-        const user = decode_access_token(token);
-        if (user) {
-            req.user = user;
+        try {
+            const user = yield decode_access_token(token);
+            if (user) {
+                req.user = user;
+            }
+            next();
         }
-        next();
+        catch (err) {
+            console.log("jwt error: ", err);
+            return res.status(401).json({ error: "Invalid Token" });
+        }
     });
 }
 exports.jwtAuthentication = jwtAuthentication;
 function jwtSocketAuthentication(socket, next) {
-    // Extract the token from the request header
-    console.log('Socket User:', socket);
-    const token = socket.handshake.auth.token;
-    if (!token) {
-        return socket.send({ "error": "No Authorization provided" });
-    }
-    // const user = decode_access_token(token);
-    // if (user){
-    //   socket.data.user = user;
-    //   socket.data.channels = user.getChannels()
-    // }
-    socket.user = new user_1.User("louis", "oha", "o@g.com");
-    console.log('Socket User:', socket.user);
-    next();
+    return __awaiter(this, void 0, void 0, function* () {
+        // Extract the token from the request header
+        const token = socket.handshake.auth.token;
+        if (!token) {
+            return socket.send({ "error": "No Authorization provided" });
+        }
+        const user = yield decode_access_token(token);
+        if (user) {
+            socket.user = user;
+            // socket.data.channels = user.getChannels()
+        }
+        next();
+    });
 }
 exports.jwtSocketAuthentication = jwtSocketAuthentication;
-const socketAuthenticationDecorator = (namespace) => {
-    namespace.use((socket, next) => {
-        jwtSocketAuthentication(socket, (err) => {
+const socketAuthenticationDecorator = (namespace) => __awaiter(void 0, void 0, void 0, function* () {
+    namespace.use((socket, next) => __awaiter(void 0, void 0, void 0, function* () {
+        yield jwtSocketAuthentication(socket, (err) => {
             if (err) {
                 return next(err);
             }
             next();
         });
-    });
-};
+    }));
+});
 exports.socketAuthenticationDecorator = socketAuthenticationDecorator;

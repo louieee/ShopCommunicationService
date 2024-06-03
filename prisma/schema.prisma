@@ -1,27 +1,73 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
-model Profile {
-  id     Int     @id @default(autoincrement())
-  bio    String?
-  userId Int     @unique
-  User   User    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+model User {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  user_id     Int
+  staff_id    Int?
+  customer_id Int?
+  email       String    @unique
+  first_name  String
+  last_name   String
+  password    String
+  role        String    @default("customer")
+  profile_pic String?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+  chat_ids    String[]  @db.ObjectId
+  chats       Chat[]    @relation(fields: [chat_ids], references: [id])
+  groups      Group[]
+  messages    Message[]
 }
 
-model User {
-  id      Int      @id @default(autoincrement())
-  first_name    String?  @db.VarChar(255)
-  last_name String? @db.VarChar(255)
-  email   String   @unique @db.VarChar(255)
-  password String @db.VarChar(255)
-  Profile Profile?
+model Chat {
+  id         String    @id @default(auto()) @map("_id") @db.ObjectId
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  messages   Message[]
+
+  participant_ids String[] @db.ObjectId
+  participants    User[]   @relation(fields: [participant_ids], references: [id])
+  group           Group?
+  is_group        Boolean? @default(false)
+}
+
+model Message {
+  id          String       @id @default(auto()) @map("_id") @db.ObjectId
+  content     String
+  sender_id   String       @db.ObjectId
+  sender      User         @relation(fields: [sender_id], references: [id])
+  chat_id     String       @db.ObjectId
+  chat        Chat         @relation(fields: [chat_id], references: [id], onDelete: Cascade)
+  attachments Attachment[]
+  status      String       @default("sent")
+  created_at  DateTime     @default(now())
+  updated_at  DateTime     @updatedAt
+}
+
+model Attachment {
+  id         String  @id @default(auto()) @map("_id") @db.ObjectId
+  file_type  String
+  file       String
+  message_id String  @db.ObjectId
+  message    Message @relation(fields: [message_id], references: [id], onDelete: Cascade)
+}
+
+model Group {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String   @unique
+  description String?
+  type        String
+  creator_id  String   @db.ObjectId
+  creator     User     @relation(fields: [creator_id], references: [id])
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  chat        Chat     @relation(fields: [chat_id], references: [id], onDelete: Cascade)
+  chat_id     String   @unique @db.ObjectId
 }
