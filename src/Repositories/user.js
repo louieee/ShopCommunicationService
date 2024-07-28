@@ -62,5 +62,35 @@ class User {
             return users;
         });
     }
+    static create(data) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return database_1.db_client.user.create({ data: Object.assign(Object.assign({}, data), { password: "" }) });
+        });
+    }
+    static update(user_id, data) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let user = yield database_1.db_client.user.findFirst({ where: { user_id: user_id },
+                select: { id: true } });
+            if (!user) {
+                return false;
+            }
+            return database_1.db_client.user.update({
+                where: { id: user.id },
+                data: data,
+            });
+        });
+    }
+    static delete(user_id) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let user = yield database_1.db_client.user.findFirst({ where: { user_id: user_id },
+                select: { id: true } });
+            if (!user) {
+                return false;
+            }
+            return database_1.db_client.user.delete({
+                where: { id: user.id }
+            });
+        });
+    }
 }
 exports.User = User;

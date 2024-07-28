@@ -34,11 +34,6 @@ export interface UserListType extends BaseUserType{
     //     return ["general", `user-${this.id}`]
     // }
 
-
-export interface CreateUser extends BaseUserType{
-    password: string
-}
-
 export interface UserDetailType extends UserListType{
     role : string
     created_at: Date

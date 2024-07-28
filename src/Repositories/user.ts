@@ -54,6 +54,37 @@ export class User implements BaseUserType{
 }
 
 
+    static async create(data: {"first_name": string, "last_name": string, "email": string, "user_id": number}){
+        return db_client.user.create({data: {...data, password: ""}});
+    }
+
+    static async update(user_id: number, data: {"first_name": string, "last_name": string, "email": string, "user_id": number}){
+      let user = await db_client.user.findFirst({where: {user_id: user_id},
+       select:{id: true}});
+      if (!user){
+          return false
+      }
+        return db_client.user.update({
+            where: {id: user.id},
+            data: data,
+        });
+
+    }
+
+    static async delete(user_id: number){
+       let user = await db_client.user.findFirst({where: {user_id: user_id},
+       select:{id: true}});
+      if (!user){
+          return false
+      }
+        return db_client.user.delete({
+            where: {id: user.id}
+        });
+
+    }
+
+
+
 
 
 }

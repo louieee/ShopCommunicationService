@@ -85,8 +85,11 @@ class RabbitMQService {
                     if (msg === null) {
                         return null;
                     }
-                    consumer.handle_message(msg);
-                    (_a = this.channel) === null || _a === void 0 ? void 0 : _a.ack(msg);
+                    console.log("just received a message");
+                    let consumed = consumer.handle_message(msg);
+                    if (consumed) {
+                        (_a = this.channel) === null || _a === void 0 ? void 0 : _a.ack(msg);
+                    }
                     return msg;
                 }, { noAck: false }));
             }

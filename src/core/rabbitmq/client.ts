@@ -58,8 +58,12 @@ export class RabbitMQService{
                 if (msg === null){
                     return null
                 }
-                consumer.handle_message(msg)
-                this.channel?.ack(msg)
+                console.log("just received a message")
+                let consumed = consumer.handle_message(msg)
+                if (consumed){
+                    this.channel?.ack(msg)
+
+                }
                 return msg
                 },
                 {noAck: false });
