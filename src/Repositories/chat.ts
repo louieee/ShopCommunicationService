@@ -1,5 +1,8 @@
 import {db_client} from "../core/database";
 import {CreateGroup, CreateMessage, UpdateChat, UpdateMessage} from "../schemas/chat";
+import {RabbitMQ} from "../core/rabbitmq";
+import { Queues } from "../core/rabbitmq/consumer";
+
 
 export class Chat{
 
@@ -30,12 +33,26 @@ export class Chat{
     }
 
     static async create_chat(user_id: string, recipient_id: string){
-        return db_client.chat.create({
-            data: {
-                is_group: false,
-                participant_ids: [user_id, recipient_id]
-            },
+        const data = {
+            is_group: false,
+            participant_ids: [user_id, recipient_id]
+        }
+        const new_chat = await db_client.chat.create({
+            data: data,
         });
+        RabbitMQ.connect().then(async(rs)=>{
+            await rs.consume()
+            await rs.publish([Queues.ReportQueue], {
+              action: "create",
+              data_type: "chat",
+              data: JSON.stringify({
+                "id": new_chat.id,
+                "is_group": data.is_group,
+                "participants": data.participant_ids,
+              })
+            })
+          });
+          return new_chat;
     }
 
 
@@ -145,10 +162,31 @@ export class Chat{
             }
             await db_client.chat.update(query)
         }
+        const chat = await this.retrieve(id, user_id)
+        if (!chat){
+            return query
+        }
+        RabbitMQ.connect().then(async(rs)=>{
+            await rs.consume()
+            await rs.publish([Queues.ReportQueue], {
+              action: "update",
+              data_type: "chat",
+              data: JSON.stringify({
+                "id": chat.id,
+                "is_group": chat.is_group,
+                "participants": chat.participants.map((p)=>p.id),
+                "group_id": chat.group?.id,
+                "group_name": chat.group?.name,
+                "group_type": chat.group?.type,
+                "group_creator": chat.group?.creator_id
+              })
+            })
+          });
         return query
     }
 
     static async delete(id:string, user_id:string){
+        const chat = await this.retrieve(id, user_id)
         let group;
         group = db_client.group.findFirst({
             where: {
@@ -160,11 +198,31 @@ export class Chat{
         if (!group){
             return null
         }
-        return db_client.chat.delete({
+        const res = await db_client.chat.delete({
             where: {
                 id: id
             },
         });
+        if (!chat){
+            return res
+        }
+        RabbitMQ.connect().then(async(rs)=>{
+            await rs.consume()
+            await rs.publish([Queues.ReportQueue], {
+              action: "delete",
+              data_type: "chat",
+              data: JSON.stringify({
+                "id": chat.id,
+                "is_group": chat.is_group,
+                "participants": chat.participants.map((p)=>p.id),
+                "group_id": chat.group?.id,
+                "group_name": chat.group?.name,
+                "group_type": chat.group?.type,
+                "group_creator": chat.group?.creator_id
+              })
+            })
+          });
+        return res;
     }
 
     static async participants(id:string){

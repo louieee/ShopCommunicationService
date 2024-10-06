@@ -3,7 +3,7 @@ import {User} from "../../Repositories/user";
 import {UserHandler} from "./handlers";
 export interface RabbitMQPayload {
     action: string
-    type: string
+    data_type: string
     data: string
 }
 
@@ -42,7 +42,7 @@ export class CommunicationConsumer extends Consumer{
         }
         let payload: RabbitMQPayload
         payload = JSON.parse(message.content.toString())
-        switch (payload.type) {
+        switch (payload.data_type) {
             case "user": this.handle_user_actions(payload.action, payload.data);break;
             default:break;
         }
