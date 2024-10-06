@@ -15,7 +15,7 @@ model User {
   email       String    @unique
   first_name  String
   last_name   String
-  password    String∂
+  password    String
   role        String    @default("customer")
   profile_pic String?
   created_at  DateTime  @default(now())

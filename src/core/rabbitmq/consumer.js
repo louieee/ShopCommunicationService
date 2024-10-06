@@ -36,7 +36,7 @@ class CommunicationConsumer extends Consumer {
         }
         let payload;
         payload = JSON.parse(message.content.toString());
-        switch (payload.type) {
+        switch (payload.data_type) {
             case "user":
                 this.handle_user_actions(payload.action, payload.data);
                 break;

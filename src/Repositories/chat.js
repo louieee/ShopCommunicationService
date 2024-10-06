@@ -11,6 +11,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Message = exports.Chat = void 0;
 const database_1 = require("../core/database");
+const rabbitmq_1 = require("../core/rabbitmq");
+const consumer_1 = require("../core/rabbitmq/consumer");
 class Chat {
     static create_group(user_id, data) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -41,12 +43,26 @@ class Chat {
     }
     static create_chat(user_id, recipient_id) {
         return __awaiter(this, void 0, void 0, function* () {
-            return database_1.db_client.chat.create({
-                data: {
-                    is_group: false,
-                    participant_ids: [user_id, recipient_id]
-                },
+            const data = {
+                is_group: false,
+                participant_ids: [user_id, recipient_id]
+            };
+            const new_chat = yield database_1.db_client.chat.create({
+                data: data,
             });
+            rabbitmq_1.RabbitMQ.connect().then((rs) => __awaiter(this, void 0, void 0, function* () {
+                yield rs.consume();
+                yield rs.publish([consumer_1.Queues.ReportQueue], {
+                    action: "create",
+                    data_type: "chat",
+                    data: JSON.stringify({
+                        "id": new_chat.id,
+                        "is_group": data.is_group,
+                        "participants": data.participant_ids,
+                    })
+                });
+            }));
+            return new_chat;
         });
     }
     static retrieve(id, user_id) {
@@ -153,11 +169,33 @@ class Chat {
                 };
                 yield database_1.db_client.chat.update(query);
             }
+            const chat = yield this.retrieve(id, user_id);
+            if (!chat) {
+                return query;
+            }
+            rabbitmq_1.RabbitMQ.connect().then((rs) => __awaiter(this, void 0, void 0, function* () {
+                var _a, _b, _c, _d;
+                yield rs.consume();
+                yield rs.publish([consumer_1.Queues.ReportQueue], {
+                    action: "update",
+                    data_type: "chat",
+                    data: JSON.stringify({
+                        "id": chat.id,
+                        "is_group": chat.is_group,
+                        "participants": chat.participants.map((p) => p === null || p === void 0 ? void 0 : p.id),
+                        "group_id": (_a = chat.group) === null || _a === void 0 ? void 0 : _a.id,
+                        "group_name": (_b = chat.group) === null || _b === void 0 ? void 0 : _b.name,
+                        "group_type": (_c = chat.group) === null || _c === void 0 ? void 0 : _c.type,
+                        "group_creator": (_d = chat.group) === null || _d === void 0 ? void 0 : _d.creator_id
+                    })
+                });
+            }));
             return query;
         });
     }
     static delete(id, user_id) {
         return __awaiter(this, void 0, void 0, function* () {
+            const chat = yield this.retrieve(id, user_id);
             let group;
             group = database_1.db_client.group.findFirst({
                 where: {
@@ -169,11 +207,32 @@ class Chat {
             if (!group) {
                 return null;
             }
-            return database_1.db_client.chat.delete({
+            const res = yield database_1.db_client.chat.delete({
                 where: {
                     id: id
                 },
             });
+            if (!chat) {
+                return res;
+            }
+            rabbitmq_1.RabbitMQ.connect().then((rs) => __awaiter(this, void 0, void 0, function* () {
+                var _a, _b, _c, _d;
+                yield rs.consume();
+                yield rs.publish([consumer_1.Queues.ReportQueue], {
+                    action: "delete",
+                    data_type: "chat",
+                    data: JSON.stringify({
+                        "id": chat.id,
+                        "is_group": chat.is_group,
+                        "participants": chat.participants.map((p) => p.id),
+                        "group_id": (_a = chat.group) === null || _a === void 0 ? void 0 : _a.id,
+                        "group_name": (_b = chat.group) === null || _b === void 0 ? void 0 : _b.name,
+                        "group_type": (_c = chat.group) === null || _c === void 0 ? void 0 : _c.type,
+                        "group_creator": (_d = chat.group) === null || _d === void 0 ? void 0 : _d.creator_id
+                    })
+                });
+            }));
+            return res;
         });
     }
     static participants(id) {

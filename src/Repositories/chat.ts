@@ -174,7 +174,7 @@ export class Chat{
               data: JSON.stringify({
                 "id": chat.id,
                 "is_group": chat.is_group,
-                "participants": chat.participants.map((p)=>p.id),
+                "participants": chat.participants ? chat.participants.map((p: typeof chat["participants"][0])=>p?.id): [],
                 "group_id": chat.group?.id,
                 "group_name": chat.group?.name,
                 "group_type": chat.group?.type,
@@ -214,7 +214,7 @@ export class Chat{
               data: JSON.stringify({
                 "id": chat.id,
                 "is_group": chat.is_group,
-                "participants": chat.participants.map((p)=>p.id),
+                "participants": chat.participants.map((p: typeof chat.participants[0])=>p.id),
                 "group_id": chat.group?.id,
                 "group_name": chat.group?.name,
                 "group_type": chat.group?.type,
